@@ -51,5 +51,7 @@ This same object a mathematician would call a “tensor” is represented in thr
 
 -  **`number[]`** 是 javascript 对应一组`数字`的底层类型。一个数字为0阶张量，`number[]`为1阶张量，`number[][]`为2阶，等等。在使用 **deeplearn.js** 时不会太多的使用到`number[]`，但是这是一种在 **deeplearn.js** 中获取things输入和输出的方式。
 - **`NDArray`** 是 **deeplearn.js** 更强大的实现。涉及到 NDArrays 的计算可以在客服端的 GPU  上执行，这是 **deeplearn.js** 的根本优势。NDArray 是大多数真实张量在最终计算发生时的格式。当你调用`Session.eval`时，NDArray就是你得到的返回值(输入应该是`FeedEntry`)。你可以使用`NDArray.new(number[])`和`NDArray.get([indices])`在`NDArray`和`number[]`之间做转换。
-- **`Tensor`** 是一个空容器；它里面没有真实的数据。
-
+- **`Tensor`** 是一个空容器；它里面没有真实的数据。他是构造图形时使用的占位符，它记录数据的形状和类型最终适配它。他在控件中不包含任何实际值。只是知道形状和类型，然而，在图形构建时他可以进行重要的异常捕获；如果你想让一个2x3的矩阵乘以一个10x10的矩阵，当你创建这Tensor个和节点的时候，在你给它输入数据之前，图形化就会对你喊？在`Tensor`和`NDArray`或者`number[]`之间直接转换是没有意义的；如果你发现你想那样做，下面其中一个可NDArray能是正确的：
+ - 你拥有一个静态的`NDArray`，你想在图形化使用它；使用`graph.constant()`来创建一个不变的`Tensor`节点。
+ - 你拥有一个`NDArray`，你想将他作为图形化的输入。通过`graph.placeholder`在图形化中创建一个占位符，然后在`FeedEntry`中发送你的输入到图形化。
+ - 你拥有一个输出行量，你想用session来计算然后返回他的值。调用`Session.eval(tensor)`。
