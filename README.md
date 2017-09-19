@@ -55,3 +55,59 @@ This same object a mathematician would call a “tensor” is represented in thr
  - 你拥有一个静态的`NDArray`，你想在图形化使用它；使用`graph.constant()`来创建一个不变的`Tensor`节点。
  - 你拥有一个`NDArray`，你想将他作为图形化的输入。通过`graph.placeholder`在图形化中创建一个占位符，然后在`FeedEntry`中发送你的输入到图形化。
  - 你拥有一个输出行量，你想用session来计算然后返回他的值。调用`Session.eval(tensor)`。
+
+
+In general, you should only use a `Graph` when you want automatic differentiation (training). If you just want to use the library for forward mode inference, or just general numeric computation, using `NDArray`s with `NDArrayMath` will suffice.
+
+If you are interested in training, you must use a `Graph`. When you construct a graph you will be working with `Tensor`s, and when you execute it with `Session.eval`, the result will be `NDArray`s.
+
+一般来说，当你想自动分化时，你应该只使用`Graph`。如果你只是想使用这个库进行正向模式推理，或者仅仅是一般的数值计算，使用`NDArray`和`NDArrayMath`就足够了。
+
+如果你对训练感兴趣，你必须使用`Graph`。当你构建一个graph，你将使用`Tensor`，当你通过`Session.eval`来执行它，结果将会是`NDArray`。
+
+## Forward mode inference / numeric computation 正向模式推理 / 数值计算
+
+If you just want to perform mathematical operations on NDArrays, you can simply construct `NDArray`s with your data, and perform operations on them with a `NDArrayMath` object.
+
+For example, if you want to compute a matrix times a vector on the GPU:
+
+如果你仅仅想用NDArrays执行数学计算，你可以用你的数据简单的构造一些`NDArray`，然后通过`NDArrayMath`对象对它们执行操作。
+
+例如，如果你想在GPU上计算矩阵和乘以向量：
+
+```javascript
+const math = new NDArrayMathGPU();
+
+math.scope((keep, track) => {
+  const matrixShape = [2, 3];  // 2 rows, 3 columns.
+  const matrix = track(Array2D.new(matrixShape, [10, 20, 30, 40, 50, 60]));
+  const vector = track(Array1D.new([0, 1, 2]));
+  const result = math.matrixTimesVector(matrix, vector);
+
+  console.log("result shape:", result.shape);
+  console.log("result", result.getValues());
+});
+```
+
+For more information on `NDArrayMath`, `keep`, and `track`, see Introduction and core concepts.
+
+The `NDArray`/`NDArrayMath` layer can be thought of as analogous to NumPy.
+
+有关`NDArrayMath`,`keep`和`track`的更多信息，请看[Introduction and core concepts](https://pair-code.github.io/deeplearnjs/docs/tutorials/intro.html)。
+
+`NDArray`/`NDArrayMath`可以看做与[NumPy](http://www.numpy.org/)相似。
+
+## Training: delayed execution, Graphs, and Sessions
+
+The most important thing to understand about training (automatic differentiation) in deeplearn.js is that it uses a delayed execution model. Your code will contain two separate stages: first you will build a Graph, the object representing the calculation you want to do, then later you will execute the graph and get the results.
+
+Most of the time, your Graph will transform some input(s) to some output(s). In general, the architecture of your Graph will stay fixed, but it will contain parameters that will be automatically updated.
+
+When you execute a Graph, there are two modes: training, and inference.
+
+Inference is the act of providing a Graph an input to produce an output.
+
+Training a graph involves providing the Graph many examples of labelled input / output pairs, and automatically updating parameters of the Graph so that the output of the Graph when evaluating (inferring) an input is closer to the labelled output. The function that gives a Scalar representing how close labelled output to a generated output is called the “cost function” (also known as a “loss function”). The loss function should output close to zero when the model is performing well. You must provide a cost function when training.
+
+deeplearn.js is structured very similarly to Tensorflow, Google’s python-based machine learning language. If you know TensorFlow, the concepts of Tensors, Graphs, and Sessions are all almost the same, however we assume no knowledge of TensorFlow here.
+
